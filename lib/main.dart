@@ -1,10 +1,18 @@
+/*
+ * Título: Ponto de Entrada Principal da Aplicação
+ * Descrição: Inicia a aplicação e define a tela de Login como rota inicial.
+ * Autor: Gemini
+ * Data: 01 de Agosto de 2025
+*/
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'viewmodels/scanner_viewmodel.dart';
-import 'views/scanner_view.dart';
-import 'views/wifi_scanner_view.dart';
+import 'viewmodels/login_viewmodel.dart';
+import 'views/login_view.dart';
+import 'views/scanner_view.dart'; // Mantenha os imports que podem ser necessários
+import 'viewmodels/scanner_viewmodel.dart'; // Mantenha os imports que podem ser necessários
 
-// Constantes de tema podem ser movidas para um arquivo separado (ex: theme.dart)
+// O tema pode ser mantido aqui ou movido para um arquivo separado
 final ThemeData lightTheme = ThemeData.light().copyWith(
   primaryColor: Colors.blue.shade700,
   scaffoldBackgroundColor: const Color(0xFFF5F5F5),
@@ -21,6 +29,10 @@ final ThemeData lightTheme = ThemeData.light().copyWith(
     backgroundColor: Colors.blue.shade700,
     foregroundColor: Colors.white,
   ),
+  inputDecorationTheme: InputDecorationTheme(
+    // Estilo para os campos de texto
+    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+  ),
   colorScheme: ColorScheme.fromSwatch(
     brightness: Brightness.light,
     primarySwatch: Colors.blue,
@@ -36,94 +48,18 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // O ChangeNotifierProvider é colocado aqui para que o ViewModel
-    // esteja disponível para a ScannerView e suas filhas.
-    return ChangeNotifierProvider(
-      create: (context) => ScannerViewModel(),
+    // Usamos um MultiProvider para gerenciar os ViewModels de diferentes telas
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => LoginViewModel()),
+        ChangeNotifierProvider(create: (_) => ScannerViewModel()),
+        // Adicione outros providers de ViewModel aqui se necessário
+      ],
       child: MaterialApp(
-        title: 'ESP32 BLE Sensores',
+        title: 'ESP32 Sensor App',
         theme: lightTheme,
-        home: const MainMenuPage(),
-      ),
-    );
-  }
-}
-
-class MainMenuPage extends StatelessWidget {
-  const MainMenuPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Menu Principal')),
-      body: ListView(
-        padding: const EdgeInsets.all(16.0),
-        children: [
-          _MenuItem(
-            title: 'Scanner BLE',
-            subtitle: 'Conectar via Bluetooth Low Energy',
-            icon: Icons.bluetooth_searching,
-            color: Colors.blue.shade700,
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const ScannerView()),
-              );
-            },
-          ),
-          const SizedBox(height: 16), // Espaçamento
-          // *** NOVO ITEM DE MENU AQUI ***
-          _MenuItem(
-            title: 'Scanner Wi-Fi (HTTP)',
-            subtitle: 'Conectar via Wi-Fi Direct (AP Mode)',
-            icon: Icons.wifi_find,
-            color: Colors.green.shade700,
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const WifiScannerView(),
-                ),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// Widget auxiliar para os itens do menu
-class _MenuItem extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final IconData icon;
-  final Color color;
-  final VoidCallback onTap;
-
-  const _MenuItem({
-    required this.title,
-    required this.subtitle,
-    required this.icon,
-    required this.color,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: ListTile(
-        leading: Icon(icon, size: 40, color: color),
-        title: Text(title, style: Theme.of(context).textTheme.titleLarge),
-        subtitle: Text(subtitle),
-        trailing: const Icon(Icons.arrow_forward_ios),
-        onTap: onTap,
-        contentPadding: const EdgeInsets.symmetric(
-          vertical: 12,
-          horizontal: 16,
-        ),
+        // A tela inicial agora é a LoginView
+        home: const LoginView(),
       ),
     );
   }
