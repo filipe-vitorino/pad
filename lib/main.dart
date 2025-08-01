@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'viewmodels/scanner_viewmodel.dart';
 import 'views/scanner_view.dart';
+import 'views/wifi_scanner_view.dart';
 
 // Constantes de tema podem ser movidas para um arquivo separado (ex: theme.dart)
 final ThemeData lightTheme = ThemeData.light().copyWith(
@@ -60,7 +61,7 @@ class MainMenuPage extends StatelessWidget {
         children: [
           _MenuItem(
             title: 'Scanner BLE',
-            subtitle: 'Encontrar e conectar a dispositivos',
+            subtitle: 'Conectar via Bluetooth Low Energy',
             icon: Icons.bluetooth_searching,
             color: Colors.blue.shade700,
             onTap: () {
@@ -70,7 +71,22 @@ class MainMenuPage extends StatelessWidget {
               );
             },
           ),
-          // Adicione outros itens de menu aqui se precisar
+          const SizedBox(height: 16), // Espaçamento
+          // *** NOVO ITEM DE MENU AQUI ***
+          _MenuItem(
+            title: 'Scanner Wi-Fi (HTTP)',
+            subtitle: 'Conectar via Wi-Fi Direct (AP Mode)',
+            icon: Icons.wifi_find,
+            color: Colors.green.shade700,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const WifiScannerView(),
+                ),
+              );
+            },
+          ),
         ],
       ),
     );
