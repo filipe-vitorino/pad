@@ -1,19 +1,61 @@
-/*
- * Título: View do Scanner Wi-Fi (com Lógica de Navegação Corrigida)
- * Descrição: Interface para escanear e conectar a um ESP32 via Wi-Fi.
- * Lógica de navegação após conexão corrigida.
- * Autor: Gemini
- * Data: 01 de Agosto de 2025
-*/
-
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:wifi_scan/wifi_scan.dart';
+import 'package:wifi_iot/wifi_iot.dart';
+import 'package:app_settings/app_settings.dart';
 import '../viewmodels/wifi_scanner_viewmodel.dart';
-import 'http_controller_view.dart';
+import 'wifi_actions_view.dart';
 
-class WifiScannerView extends StatelessWidget {
+class WifiScannerView extends StatefulWidget {
   const WifiScannerView({super.key});
+
+  @override
+  State<WifiScannerView> createState() => _WifiScannerViewState();
+}
+
+class _WifiScannerViewState extends State<WifiScannerView> {
+  Timer? _checkConnectionTimer;
+
+  @override
+  void dispose() {
+    _stopConnectionChecker();
+    super.dispose();
+  }
+
+  void _startConnectionChecker(String targetSsidPrefix) {
+    _stopConnectionChecker();
+
+    _checkConnectionTimer = Timer.periodic(const Duration(seconds: 2), (
+      timer,
+    ) async {
+      String? currentSsid = await WiFiForIoTPlugin.getSSID();
+      print(
+        "Verificando Wi-Fi... Conectado a: '$currentSsid' | Alvo começa com: '$targetSsidPrefix'",
+      );
+
+      // --- ALTERAÇÃO AQUI: de '==' para 'startsWith' ---
+      if (currentSsid != null && currentSsid.startsWith(targetSsidPrefix)) {
+        print("✅ Conexão por prefixo detetada! A navegar...");
+        _stopConnectionChecker();
+
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              // Passamos o nome real da rede à qual nos conectámos
+              builder: (context) => WifiActionsView(deviceName: currentSsid),
+            ),
+          );
+        }
+      }
+    });
+  }
+
+  void _stopConnectionChecker() {
+    _checkConnectionTimer?.cancel();
+    _checkConnectionTimer = null;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +65,7 @@ class WifiScannerView extends StatelessWidget {
         builder: (context, viewModel, child) {
           return Scaffold(
             appBar: AppBar(
-              title: const Text('Selecione o Servidor ESP32'),
+              title: const Text('Selecione o Servidor Wi-Fi'),
               actions: [
                 if (viewModel.isScanning)
                   const Padding(
@@ -52,7 +94,8 @@ class WifiScannerView extends StatelessWidget {
                       subtitle: Text("Sinal: ${result.level} dBm"),
                       trailing: const Icon(Icons.arrow_forward_ios),
                       onTap:
-                          () => _showPasswordDialog(context, result, viewModel),
+                          () =>
+                              _showManualConnectionDialog(context, result.ssid),
                     ),
                   );
                 },
@@ -68,101 +111,51 @@ class WifiScannerView extends StatelessWidget {
     );
   }
 
-  Future<void> _showPasswordDialog(
+  Future<void> _showManualConnectionDialog(
     BuildContext context,
-    WiFiAccessPoint ap,
-    WifiScannerViewModel viewModel,
+    String targetSsid,
   ) async {
-    final passwordController = TextEditingController();
-    bool isPasswordObscured = true;
-
-    // O context do diálogo é diferente do context da tela principal.
-    // Vamos guardar uma referência ao context do diálogo para fechá-lo.
-    BuildContext? dialogContext;
-
-    await showDialog(
+    return showDialog(
       context: context,
-      builder: (dContext) {
-        dialogContext = dContext; // Armazena o context do diálogo
-        return StatefulBuilder(
-          builder: (context, setStateDialog) {
-            return AlertDialog(
-              title: Text('Conectar a ${ap.ssid}'),
-              content: TextField(
-                controller: passwordController,
-                obscureText: isPasswordObscured,
-                keyboardType: TextInputType.visiblePassword,
-                autocorrect: false,
-                enableSuggestions: false,
-                decoration: InputDecoration(
-                  labelText: 'Senha',
-                  border: const OutlineInputBorder(),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      isPasswordObscured
-                          ? Icons.visibility_off
-                          : Icons.visibility,
-                    ),
-                    onPressed: () {
-                      setStateDialog(() {
-                        isPasswordObscured = !isPasswordObscured;
-                      });
-                    },
-                  ),
+      builder:
+          (dialogContext) => AlertDialog(
+            title: const Text('Conectar à Rede'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  "Você será direcionado para as configurações de Wi-Fi.",
                 ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancelar'),
+                const SizedBox(height: 16),
+                const Text(
+                  "1. Conecte-se a uma rede que comece com:",
+                  style: TextStyle(fontWeight: FontWeight.bold),
                 ),
-                ElevatedButton(
-                  // ================= LÓGICA CORRIGIDA AQUI =================
-                  onPressed: () async {
-                    // 1. Pega a senha
-                    final password = passwordController.text;
-
-                    // 2. Tenta conectar e ESPERA pelo resultado
-                    final success = await viewModel.connectToWifi(
-                      ap.ssid,
-                      password,
-                    );
-
-                    // 3. AGORA, com o resultado em mãos, decide o que fazer
-                    if (success && context.mounted) {
-                      // 4. Se deu certo, FECHA o diálogo...
-                      Navigator.pop(dialogContext!);
-
-                      // 5. ... e NAVEGA para a próxima tela.
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder:
-                              (context) =>
-                                  HttpControllerView(deviceName: ap.ssid),
-                        ),
-                      );
-                    } else if (context.mounted) {
-                      // Se falhou, podemos mostrar um erro aqui dentro do diálogo
-                      // ou simplesmente fechar o diálogo e mostrar um SnackBar.
-                      // Por enquanto, vamos manter o comportamento de fechar e mostrar o SnackBar.
-                      Navigator.pop(dialogContext!);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Falha ao conectar a ${ap.ssid}'),
-                          backgroundColor: Colors.red,
-                        ),
-                      );
-                    }
-                  },
-                  // ========================================================
-                  child: const Text('Conectar'),
+                Text(targetSsid),
+                const SizedBox(height: 8),
+                const Text(
+                  "2. Volte para este aplicativo.",
+                  style: TextStyle(fontWeight: FontWeight.bold),
                 ),
+                const SizedBox(height: 16),
+                const Text("A navegação será automática."),
               ],
-            );
-          },
-        );
-      },
+            ),
+            actions: [
+              TextButton(
+                child: const Text('Cancelar'),
+                onPressed: () => Navigator.of(dialogContext).pop(),
+              ),
+              ElevatedButton(
+                child: const Text('ABRIR CONFIG. WI-FI'),
+                onPressed: () {
+                  Navigator.of(dialogContext).pop();
+                  _startConnectionChecker(targetSsid);
+                  AppSettings.openAppSettings(type: AppSettingsType.wifi);
+                },
+              ),
+            ],
+          ),
     );
   }
 }

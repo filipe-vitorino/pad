@@ -1,35 +1,31 @@
-/*
- * Título: View do Controlador HTTP
- * Descrição: Interface para exibir dados de sensores vindos de um servidor HTTP.
- * Autor: Gemini
- * Data: 01 de Agosto de 2025
-*/
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../viewmodels/http_controller_viewmodel.dart';
+import '../models/sensor_data.dart'; // Importe o modelo de dados
 
 class HttpControllerView extends StatelessWidget {
   final String deviceName;
-
   const HttpControllerView({super.key, required this.deviceName});
 
   @override
   Widget build(BuildContext context) {
+    // Cria uma instância do ViewModel específica para esta tela
     return ChangeNotifierProvider(
       create: (_) => HttpControllerViewModel(deviceName: deviceName),
       child: Consumer<HttpControllerViewModel>(
         builder: (context, viewModel, child) {
-          final sensorData = viewModel.sensorData;
           return Scaffold(
             appBar: AppBar(
               title: Text(viewModel.deviceName),
               centerTitle: true,
+              // Botão para buscar dados por período
             ),
             body: SingleChildScrollView(
               padding: const EdgeInsets.all(16.0),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  // --- Seção de Status ---
                   Text(
                     'Status: ${viewModel.connectionStatus}',
                     textAlign: TextAlign.center,
@@ -42,11 +38,19 @@ class HttpControllerView extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 24),
+
+                  // --- Seção de Dados em Tempo Real ---
+                  Text(
+                    "Dados em Tempo Real",
+                    style: Theme.of(context).textTheme.headlineSmall,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
                   _buildSensorTile(
                     context,
                     'Vazão',
-                    sensorData?.vazao != null
-                        ? '${sensorData!.vazao!.toStringAsFixed(2)} L/min'
+                    viewModel.sensorData?.vazao != null
+                        ? '${viewModel.sensorData!.vazao!.toStringAsFixed(2)} L/min'
                         : '--',
                     Icons.waves,
                     Colors.blue.shade600,
@@ -55,8 +59,8 @@ class HttpControllerView extends StatelessWidget {
                   _buildSensorTile(
                     context,
                     'Volume',
-                    sensorData?.volume != null
-                        ? '${sensorData!.volume!.toStringAsFixed(2)} L'
+                    viewModel.sensorData?.volume != null
+                        ? '${viewModel.sensorData!.volume!.toStringAsFixed(2)} L'
                         : '--',
                     Icons.opacity,
                     Colors.cyan.shade600,
@@ -65,8 +69,8 @@ class HttpControllerView extends StatelessWidget {
                   _buildSensorTile(
                     context,
                     'Pressão',
-                    sensorData?.pressao != null
-                        ? '${sensorData!.pressao!.toStringAsFixed(2)} bar'
+                    viewModel.sensorData?.pressao != null
+                        ? '${viewModel.sensorData!.pressao!.toStringAsFixed(2)} bar'
                         : '--',
                     Icons.compress,
                     Colors.orange.shade700,
@@ -75,8 +79,8 @@ class HttpControllerView extends StatelessWidget {
                   _buildSensorTile(
                     context,
                     'Temperatura',
-                    sensorData?.temperatura != null
-                        ? '${sensorData!.temperatura!.toStringAsFixed(1)} °C'
+                    viewModel.sensorData?.temperatura != null
+                        ? '${viewModel.sensorData!.temperatura!.toStringAsFixed(1)} °C'
                         : '--',
                     Icons.thermostat,
                     Colors.red.shade600,
@@ -85,8 +89,8 @@ class HttpControllerView extends StatelessWidget {
                   _buildSensorTile(
                     context,
                     'TDS',
-                    sensorData?.tds != null
-                        ? '${sensorData!.tds!.toStringAsFixed(1)} ppm'
+                    viewModel.sensorData?.tds != null
+                        ? '${viewModel.sensorData!.tds!.toStringAsFixed(1)} ppm'
                         : '--',
                     Icons.science_outlined,
                     Colors.purple.shade500,
@@ -100,7 +104,7 @@ class HttpControllerView extends StatelessWidget {
     );
   }
 
-  // Widget de UI pode permanecer na View
+  /// Widget auxiliar para construir os cards de exibição dos sensores.
   Widget _buildSensorTile(
     BuildContext context,
     String title,

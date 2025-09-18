@@ -1,19 +1,11 @@
-/*
- * Título: View da Tela de Login
- * Descrição: Interface gráfica para o utilizador inserir as suas credenciais.
- * Autor: Gemini
- * Data: 01 de Agosto de 2025
-*/
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../viewmodels/login_viewmodel.dart';
-import 'main_menu_view.dart'; // Precisamos criar este arquivo a seguir
 import '../services/session_service.dart';
+import '../viewmodels/login_viewmodel.dart';
+import 'main_menu_view.dart';
 
 class LoginView extends StatefulWidget {
   const LoginView({super.key});
-
   @override
   State<LoginView> createState() => _LoginViewState();
 }
@@ -21,42 +13,39 @@ class LoginView extends StatefulWidget {
 class _LoginViewState extends State<LoginView> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _sessionService = SessionService(); // Instancie o serviço
+  final _sessionService = SessionService();
 
-  // ===== MUDANÇA IMPORTANTE AQUI =====
   @override
   void initState() {
     super.initState();
-    // Verificamos a sessão assim que a tela é construída
     _checkSessionAndNavigate();
   }
 
   Future<void> _checkSessionAndNavigate() async {
-    // Atraso mínimo para garantir que o primeiro frame foi construído
     await Future.delayed(Duration.zero);
-
     if (await _sessionService.isLoggedIn()) {
       if (mounted) {
-        print("Usuário já logado. Navegando para o menu...");
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (context) => const MainMenuView()),
         );
       }
-    } else {
-      print("Nenhuma sessão encontrada. Exibindo tela de login.");
     }
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
   }
 
   void _performLogin() async {
     final viewModel = Provider.of<LoginViewModel>(context, listen: false);
-
     final success = await viewModel.login(
       _emailController.text,
       _passwordController.text,
     );
-
     if (success && mounted) {
-      // Navega para o menu principal e remove a tela de login da pilha
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (context) => const MainMenuView()),
       );
@@ -66,7 +55,6 @@ class _LoginViewState extends State<LoginView> {
   @override
   Widget build(BuildContext context) {
     final viewModel = Provider.of<LoginViewModel>(context);
-
     return Scaffold(
       body: Center(
         child: SingleChildScrollView(
@@ -95,7 +83,7 @@ class _LoginViewState extends State<LoginView> {
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
                 decoration: const InputDecoration(
-                  labelText: 'Utilizador (ex: email)',
+                  labelText: 'Utilizador',
                   prefixIcon: Icon(Icons.person_outline),
                 ),
               ),

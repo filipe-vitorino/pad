@@ -1,11 +1,5 @@
-/*
- * Título: ViewModel do Scanner Wi-Fi
- * Descrição: Gerencia o estado e ações da tela de scanner de Wi-Fi.
- * Autor: Gemini
- * Data: 01 de Agosto de 2025
-*/
-
 import 'package:flutter/material.dart';
+import 'package:wifi_iot/wifi_iot.dart';
 import 'package:wifi_scan/wifi_scan.dart';
 import '../services/wifi_http_service.dart';
 
@@ -26,13 +20,20 @@ class WifiScannerViewModel extends ChangeNotifier {
     await startScan();
   }
 
-  Future<void> startScan() async {
-    await _wifiService.startScan();
-  }
+  Future<void> startScan() async => await _wifiService.startScan();
 
   Future<bool> connectToWifi(String ssid, String password) async {
-    // Delega a conexão para o serviço
-    return await _wifiService.connectToWifi(ssid, password);
+    try {
+      await WiFiForIoTPlugin.disconnect();
+      return await WiFiForIoTPlugin.connect(
+        ssid,
+        password: password,
+        security: NetworkSecurity.WPA,
+        joinOnce: true,
+      );
+    } catch (e) {
+      return false;
+    }
   }
 
   @override

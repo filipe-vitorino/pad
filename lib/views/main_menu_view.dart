@@ -1,24 +1,17 @@
-/*
- * Título: View do Menu Principal
- * Descrição: Exibe as opções principais de navegação da aplicação.
- * Autor: Gemini
- * Data: 01 de Agosto de 2025
-*/
-
 import 'package:flutter/material.dart';
+import '../services/session_service.dart';
+import 'login_view.dart';
 import 'scanner_view.dart';
 import 'wifi_scanner_view.dart';
-import '../services/session_service.dart'; // Importe o serviço
-import 'login_view.dart'; // Importe a tela de login
+import 'stress_test_view.dart';
+import 'reading_history_view.dart';
 
-// Nome da classe alterado para seguir o padrão da arquitetura
 class MainMenuView extends StatelessWidget {
   const MainMenuView({super.key});
 
   @override
   Widget build(BuildContext context) {
     final sessionService = SessionService();
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Menu Principal'),
@@ -27,15 +20,11 @@ class MainMenuView extends StatelessWidget {
             icon: const Icon(Icons.logout),
             tooltip: 'Sair',
             onPressed: () async {
-              // Limpa a sessão
               await sessionService.clearSession();
-
               if (context.mounted) {
-                // Navega de volta para o Login e remove todas as outras telas da pilha
                 Navigator.of(context).pushAndRemoveUntil(
                   MaterialPageRoute(builder: (context) => const LoginView()),
-                  (Route<dynamic> route) =>
-                      false, // Este predicado remove todas as rotas
+                  (Route<dynamic> route) => false,
                 );
               }
             },
@@ -53,7 +42,12 @@ class MainMenuView extends StatelessWidget {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const ScannerView()),
+                MaterialPageRoute(
+                  builder: (context) => const ScannerView(),
+                  // --- ADIÇÃO AQUI ---
+                  // Damos um nome único a esta rota
+                  settings: const RouteSettings(name: '/scanner'),
+                ),
               );
             },
           ),
@@ -63,11 +57,39 @@ class MainMenuView extends StatelessWidget {
             subtitle: 'Conectar via Wi-Fi Direct (AP Mode)',
             icon: Icons.wifi_find,
             color: Colors.green.shade700,
+            onTap:
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const WifiScannerView(),
+                  ),
+                ),
+          ),
+          const SizedBox(height: 16),
+          _MenuItem(
+            title: 'Teste de Estresse BLE',
+            subtitle: 'Executar 100 ciclos de conexão',
+            icon: Icons.autorenew,
+            color: Colors.red.shade700,
+            onTap:
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const StressTestView(),
+                  ),
+                ),
+          ),
+          const SizedBox(height: 16),
+          _MenuItem(
+            title: 'Histórico de Leituras',
+            subtitle: 'Ver dados salvos no dispositivo',
+            icon: Icons.history_edu,
+            color: Colors.purple.shade700,
             onTap: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const WifiScannerView(),
+                  builder: (context) => const ReadingHistoryView(),
                 ),
               );
             },
@@ -78,14 +100,11 @@ class MainMenuView extends StatelessWidget {
   }
 }
 
-// Widget auxiliar para os itens do menu
 class _MenuItem extends StatelessWidget {
-  final String title;
-  final String subtitle;
+  final String title, subtitle;
   final IconData icon;
   final Color color;
   final VoidCallback onTap;
-
   const _MenuItem({
     required this.title,
     required this.subtitle,
@@ -93,23 +112,17 @@ class _MenuItem extends StatelessWidget {
     required this.color,
     required this.onTap,
   });
-
   @override
-  Widget build(BuildContext context) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: ListTile(
-        leading: Icon(icon, size: 40, color: color),
-        title: Text(title, style: Theme.of(context).textTheme.titleLarge),
-        subtitle: Text(subtitle),
-        trailing: const Icon(Icons.arrow_forward_ios),
-        onTap: onTap,
-        contentPadding: const EdgeInsets.symmetric(
-          vertical: 12,
-          horizontal: 16,
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => Card(
+    elevation: 2,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    child: ListTile(
+      leading: Icon(icon, size: 40, color: color),
+      title: Text(title, style: Theme.of(context).textTheme.titleLarge),
+      subtitle: Text(subtitle),
+      trailing: const Icon(Icons.arrow_forward_ios),
+      onTap: onTap,
+      contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+    ),
+  );
 }

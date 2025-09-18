@@ -9,11 +9,11 @@ class ScannerViewModel extends ChangeNotifier {
   bool get isScanning => _bleService.isScanning.value;
 
   ScannerViewModel() {
-    // Adiciona listeners aos ValueNotifiers do serviço
     _bleService.scanResults.addListener(_onStateChanged);
     _bleService.isScanning.addListener(_onStateChanged);
+  }
 
-    // Inicia o scan automaticamente se o bluetooth estiver ligado
+  void init() {
     _checkAdapterAndScan();
   }
 
@@ -25,21 +25,23 @@ class ScannerViewModel extends ChangeNotifier {
     });
   }
 
-  void startScan() {
-    _bleService.startScan();
-  }
+  void startScan() => _bleService.startScan();
+  void stopScan() => _bleService.stopScan();
 
-  void stopScan() {
-    _bleService.stopScan();
-  }
-
+  /// Notifica os "ouvintes" (a View) de que o estado mudou.
   void _onStateChanged() {
-    notifyListeners();
+    // CORREÇÃO: Adia a notificação para o próximo ciclo de eventos da UI.
+    // Isto quebra a cadeia síncrona de eventos (mudança no serviço -> notificação no viewmodel)
+    // e garante que o notifyListeners() nunca seja chamado durante um 'build'.
+    Future.delayed(Duration.zero, () {
+      if (hasListeners) {
+        notifyListeners();
+      }
+    });
   }
 
   @override
   void dispose() {
-    // Remove os listeners para evitar memory leaks
     _bleService.scanResults.removeListener(_onStateChanged);
     _bleService.isScanning.removeListener(_onStateChanged);
     super.dispose();

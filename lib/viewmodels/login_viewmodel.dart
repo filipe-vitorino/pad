@@ -1,16 +1,8 @@
-/*
- * Título: ViewModel da Tela de Login
- * Descrição: Gerencia o estado e a lógica de autenticação da tela de login.
- * Autor: Gemini
- * Data: 01 de Agosto de 2025
-*/
-
 import 'package:flutter/material.dart';
-import '../services/session_service.dart'; // Importe o novo serviço
+import '../services/session_service.dart';
 
 class LoginViewModel extends ChangeNotifier {
-  final SessionService _sessionService =
-      SessionService(); // Instancie o serviço
+  final SessionService _sessionService = SessionService();
 
   bool _isLoading = false;
   String? _errorMessage;
@@ -31,11 +23,7 @@ class LoginViewModel extends ChangeNotifier {
       notifyListeners();
       return false;
     } else {
-      // ===== MUDANÇA IMPORTANTE AQUI =====
-      // Se o login for um sucesso, salve a sessão!
       await _sessionService.saveSession(email);
-      // ===================================
-
       _isLoading = false;
       notifyListeners();
       return true;
